@@ -189,139 +189,138 @@ public class MainForm extends javax.swing.JFrame {
         update();
     }
 
-    // This function downloads the latest version of the program and extracts it to a temporary directory
-    private void downloadAndExtract7zFile(String url, String destinationDirectory) {
-        try {
-            // Open a connection to the download URL
-            URL downloadUrl = new URL(url);
-            URLConnection connection = downloadUrl.openConnection();
-
-            // Get the size of the file
-            int fileSize = connection.getContentLength();
-
-            // Create a temporary file and initialize the input and output streams
-            File tempFile = File.createTempFile(UUID.randomUUID().toString(), ".7z", new File(destinationDirectory).getParentFile());
-            BufferedInputStream inputStream = new BufferedInputStream(connection.getInputStream());
-            FileOutputStream outputStream = new FileOutputStream(tempFile);
-
-            // Download the file
-            byte[] buffer = new byte[1024];
-            int bytesRead = 0;
-            int totalBytesRead = 0;
-            while ((bytesRead = inputStream.read(buffer, 0, buffer.length)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-                totalBytesRead += bytesRead;
-                int progress = (int) ((totalBytesRead / (double)fileSize) * 100);
-                progressBar.setValue(progress); // Update the progress bar
-            }
-
-            // Close the streams
-            outputStream.close();
-            inputStream.close();
-
-            // Prepare to extract the file
-            SevenZFile sevenZFile = new SevenZFile(tempFile);
-            SevenZArchiveEntry entry;
-            progressBar.setValue(0);
-            currentVersionLabel.setText("Extracting...");
-
-            // Extract the file
-            while ((entry = sevenZFile.getNextEntry()) != null) {
-                if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
-                    String entryName = entry.getName();
-                    File entryFile = new File(destinationDirectory + File.separator + entryName);
-                    File entryDir = entryFile.getParentFile();
-                    if (!entryDir.exists()) {
-                        entryDir.mkdirs();
-                    }
-
-                    BufferedOutputStream outputStream2 = new BufferedOutputStream(new FileOutputStream(entryFile));
-                    byte[] buffer2 = new byte[1024];
-                    int bytesRead2 = 0;
-                    int totalBytesRead2 = 0;
-                    while ((bytesRead2 = sevenZFile.read(buffer2, 0, buffer2.length)) != -1) {
-                        outputStream2.write(buffer2, 0, bytesRead2);
-                        totalBytesRead2 += bytesRead2;
-                        int progress = (int) ((totalBytesRead2 / (double) entry.getSize()) * 100);
-                        progressBar.setValue(progress); // Update the progress bar
-                    }
-                    outputStream2.close();
-                }
-                progressBar.setValue(0);
-            }
-
-            currentVersionLabel.setText("Installing...");
-
-            sevenZFile.close();
-            tempFile.delete();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    
     private void update() {
         // Create a SwingWorker to perform the update process in the background
-        SwingWorker<Void, Integer> worker = new SwingWorker<Void, Integer>() {
+        SwingWorker<Void, UpdateProgress> worker = new SwingWorker<Void, UpdateProgress>() {
             @Override
             protected Void doInBackground() throws Exception {
-                // Create a temporary directory
-                File tempDir = new File(jarFilePath + File.separator + "temp");
-                if (!tempDir.exists()) {
-                    tempDir.mkdir();
-                }
+                try {
+                    // Create a temporary directory
+                    File tempDir = new File(jarFilePath + File.separator + "temp");
+                    if (!tempDir.exists()) {
+                        tempDir.mkdir();
+                    }
 
-                // Download the latest package
-                downloadAndExtract7zFile(latestPackageDownloadURL, tempDir.getAbsolutePath());
+                    // DOWNLOAD PHASE
+                    publish(new UpdateProgress("Downloading...", 0));
 
-                // Move all files and folders recursively to the program files directory
-                File tempDirContents[] = tempDir.listFiles();
-                double totalFiles = tempDirContents.length;
-                double filesMoved = 0;
-                for (File file : tempDirContents) {
-                    File destinationFile = new File(programFilesPath + File.separator + file.getName());
-                    // If the file already exists, delete it
-                    if (destinationFile.exists()) {
-                        if (destinationFile.isDirectory()) {
-                            try {
-                                FileUtils.deleteDirectory(destinationFile);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                    // Open a connection to the download URL
+                    URL downloadUrl = new URL(latestPackageDownloadURL);
+                    URLConnection connection = downloadUrl.openConnection();
+
+                    // Get the size of the file
+                    int fileSize = connection.getContentLength();
+                    if (fileSize <= 0) {
+                        throw new Exception("Could not determine file size");
+                    }
+
+                    // Create a temporary file and initialize the input and output streams
+                    File tempFile = File.createTempFile(UUID.randomUUID().toString(), ".7z", tempDir.getParentFile());
+                    BufferedInputStream inputStream = new BufferedInputStream(connection.getInputStream());
+                    FileOutputStream outputStream = new FileOutputStream(tempFile);
+
+                    // Download the file
+                    byte[] buffer = new byte[1024];
+                    int bytesRead = 0;
+                    int totalBytesRead = 0;
+
+                    while ((bytesRead = inputStream.read(buffer, 0, buffer.length)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                        int progress = (int) ((totalBytesRead / (double)fileSize) * 100);
+                        publish(new UpdateProgress("Downloading...", progress));
+                    }
+
+                    // Close the streams
+                    outputStream.close();
+                    inputStream.close();
+
+                    // EXTRACTION PHASE
+                    publish(new UpdateProgress("Extracting...", 0));
+
+                    // Prepare to extract the file
+                    SevenZFile sevenZFile = new SevenZFile(tempFile);
+                    SevenZArchiveEntry entry;
+
+                    // Get total entries for progress calculation
+                    long totalEntries = 0;
+                    while ((entry = sevenZFile.getNextEntry()) != null) {
+                        if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
+                            totalEntries++;
+                        }
+                    }
+                    sevenZFile.close();
+
+                    // Reopen for actual extraction
+                    sevenZFile = new SevenZFile(tempFile);
+                    long processedEntries = 0;
+
+                    // Extract the file
+                    while ((entry = sevenZFile.getNextEntry()) != null) {
+                        if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
+                            String entryName = entry.getName();
+                            File entryFile = new File(tempDir.getAbsolutePath() + File.separator + entryName);
+                            File entryDir = entryFile.getParentFile();
+                            if (!entryDir.exists()) {
+                                entryDir.mkdirs();
                             }
-                        } else {
-                            destinationFile.delete();
+
+                            BufferedOutputStream outputStream2 = new BufferedOutputStream(new FileOutputStream(entryFile));
+                            byte[] buffer2 = new byte[1024];
+                            int bytesRead2 = 0;
+
+                            while ((bytesRead2 = sevenZFile.read(buffer2, 0, buffer2.length)) != -1) {
+                                outputStream2.write(buffer2, 0, bytesRead2);
+                            }
+                            outputStream2.close();
+
+                            processedEntries++;
+                            int progress = (int) ((processedEntries / (double) totalEntries) * 100);
+                            publish(new UpdateProgress("Extracting...", progress));
                         }
                     }
-                    if (file.isDirectory()) {
-                        try {
+
+                    sevenZFile.close();
+                    tempFile.delete();
+
+                    // INSTALLATION PHASE
+                    publish(new UpdateProgress("Installing...", 0));
+
+                    // Move all files and folders recursively to the program files directory
+                    File tempDirContents[] = tempDir.listFiles();
+                    if (tempDirContents == null || tempDirContents.length == 0) {
+                        throw new Exception("Extraction failed - no files found");
+                    }
+
+                    double totalFiles = tempDirContents.length;
+                    double filesMoved = 0;
+
+                    for (File file : tempDirContents) {
+                        File destinationFile = new File(programFilesPath + File.separator + file.getName());
+                        // If the file already exists, delete it
+                        if (destinationFile.exists()) {
+                            if (destinationFile.isDirectory()) {
+                                FileUtils.deleteDirectory(destinationFile);
+                            } else {
+                                destinationFile.delete();
+                            }
+                        }
+
+                        if (file.isDirectory()) {
                             FileUtils.moveDirectory(file, destinationFile);
-                            filesMoved += 1;
-                            int progress = (int) ((filesMoved / totalFiles) * 100);
-                            publish(progress); // Publish progress update to the GUI thread
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        try {
+                        } else {
                             FileUtils.moveFile(file, destinationFile);
-                            filesMoved += 1;
-                            int progress = (int) ((filesMoved / totalFiles) * 100);
-                            publish(progress); // Publish progress update to the GUI thread
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
                         }
+
+                        filesMoved += 1;
+                        int progress = (int) ((filesMoved / totalFiles) * 100);
+                        publish(new UpdateProgress("Installing...", progress));
                     }
-                }
 
-                // Delete the temporary directory
-                try {
+                    // Delete the temporary directory
                     Files.delete(tempDir.toPath());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
 
-                currentVersionLabel.setText("Update Installed!");
-
-                try {
+                    // Update the config file
                     File configFile = new File(configFilePath);
                     BufferedReader reader = new BufferedReader(new FileReader(configFile));
                     String line = reader.readLine();
@@ -337,25 +336,55 @@ public class MainForm extends javax.swing.JFrame {
                     BufferedWriter writer = new BufferedWriter(new FileWriter(configFile));
                     writer.write(newConfig.toString());
                     writer.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+
+                    publish(new UpdateProgress("Update Installed!", 100));
+
+                } catch (Exception e) {
+                    // Log the actual error
+                    e.printStackTrace();
+                    publish(new UpdateProgress("Update Failed: " + e.getMessage(), 0));
+                    throw e; // Re-throw to trigger done() method error handling
                 }
 
                 return null;
             }
 
             @Override
-            protected void process(List<Integer> chunks) {
-                // Update the progress bar with the latest progress value
-                progressBar.setValue(chunks.get(chunks.size() - 1));
+            protected void process(java.util.List<UpdateProgress> chunks) {
+                // Update the progress bar and label with the latest values
+                UpdateProgress latest = chunks.get(chunks.size() - 1);
+                currentVersionLabel.setText(latest.message);
+                progressBar.setValue(latest.progress);
             }
 
             @Override
             protected void done() {
+                try {
+                    get(); // This will throw any exception that occurred in doInBackground()
+                } catch (Exception e) {
+                    currentVersionLabel.setText("Update Failed!");
+                    progressBar.setValue(0);
+                    e.printStackTrace();
+                    // Optionally show an error dialog
+                    JOptionPane.showMessageDialog(MainForm.this,
+                            "Update failed: " + e.getMessage(),
+                            "Update Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             }
         };
 
         // Start the SwingWorker to perform the update process in the background
         worker.execute();
+    }
+}
+
+class UpdateProgress {
+    public final String message;
+    public final int progress;
+
+    public UpdateProgress(String message, int progress) {
+        this.message = message;
+        this.progress = progress;
     }
 }
