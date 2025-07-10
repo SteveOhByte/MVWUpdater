@@ -14,6 +14,8 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class MainForm extends javax.swing.JFrame {
 
@@ -36,7 +38,7 @@ public class MainForm extends javax.swing.JFrame {
     private String latestPackageDownloadURL;
     private String programFilesPath;
     private String configFilePath;
-    
+
     public MainForm(String programName, String currentVersion, String latestVersion, String changelog, String jarFilePath, String latestPackageDownloadURL, String programFilesPath, String configFilePath) {
         this.programName = programName;
         this.currentVersion = currentVersion;
@@ -115,52 +117,52 @@ public class MainForm extends javax.swing.JFrame {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(firstPromptLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(latestVersionLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(currentVersionLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(secondPromptLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(161, Short.MAX_VALUE)
-                .addComponent(changelogButton)
-                .addGap(161, 161, 161))
-            .addGroup(layout.createSequentialGroup()
-                .addGap(63, 63, 63)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(updateButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(skipButton, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(63, 63, 63))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(firstPromptLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addContainerGap()
+                                                .addComponent(latestVersionLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                        .addComponent(currentVersionLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(secondPromptLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addContainerGap())
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addContainerGap(161, Short.MAX_VALUE)
+                                .addComponent(changelogButton)
+                                .addGap(161, 161, 161))
+                        .addGroup(layout.createSequentialGroup()
+                                .addGap(63, 63, 63)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addComponent(updateButton)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addComponent(skipButton, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(63, 63, 63))
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(22, 22, 22)
-                .addComponent(firstPromptLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(currentVersionLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(latestVersionLabel)
-                .addGap(18, 18, 18)
-                .addComponent(changelogButton, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(secondPromptLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 15, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(updateButton)
-                    .addComponent(skipButton))
-                .addContainerGap(13, Short.MAX_VALUE))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addGap(22, 22, 22)
+                                .addComponent(firstPromptLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(currentVersionLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(latestVersionLabel)
+                                .addGap(18, 18, 18)
+                                .addComponent(changelogButton, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(secondPromptLabel)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 15, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(updateButton)
+                                        .addComponent(skipButton))
+                                .addContainerGap(13, Short.MAX_VALUE))
         );
 
         pack();
@@ -214,8 +216,20 @@ public class MainForm extends javax.swing.JFrame {
                         throw new Exception("Could not determine file size");
                     }
 
+                    // Determine file extension from URL
+                    String fileName = latestPackageDownloadURL.substring(latestPackageDownloadURL.lastIndexOf('/') + 1);
+                    String extension = "";
+                    if (fileName.toLowerCase().endsWith(".zip")) {
+                        extension = ".zip";
+                    } else if (fileName.toLowerCase().endsWith(".7z")) {
+                        extension = ".7z";
+                    } else {
+                        // Default to .7z for backward compatibility
+                        extension = ".7z";
+                    }
+
                     // Create a temporary file and initialize the input and output streams
-                    File tempFile = File.createTempFile(UUID.randomUUID().toString(), ".7z", tempDir.getParentFile());
+                    File tempFile = File.createTempFile(UUID.randomUUID().toString(), extension, tempDir.getParentFile());
                     BufferedInputStream inputStream = new BufferedInputStream(connection.getInputStream());
                     FileOutputStream outputStream = new FileOutputStream(tempFile);
 
@@ -237,50 +251,7 @@ public class MainForm extends javax.swing.JFrame {
 
                     // EXTRACTION PHASE
                     publish(new UpdateProgress("Extracting...", 0));
-
-                    // Prepare to extract the file
-                    SevenZFile sevenZFile = new SevenZFile(tempFile);
-                    SevenZArchiveEntry entry;
-
-                    // Get total entries for progress calculation
-                    long totalEntries = 0;
-                    while ((entry = sevenZFile.getNextEntry()) != null) {
-                        if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
-                            totalEntries++;
-                        }
-                    }
-                    sevenZFile.close();
-
-                    // Reopen for actual extraction
-                    sevenZFile = new SevenZFile(tempFile);
-                    long processedEntries = 0;
-
-                    // Extract the file
-                    while ((entry = sevenZFile.getNextEntry()) != null) {
-                        if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
-                            String entryName = entry.getName();
-                            File entryFile = new File(tempDir.getAbsolutePath() + File.separator + entryName);
-                            File entryDir = entryFile.getParentFile();
-                            if (!entryDir.exists()) {
-                                entryDir.mkdirs();
-                            }
-
-                            BufferedOutputStream outputStream2 = new BufferedOutputStream(new FileOutputStream(entryFile));
-                            byte[] buffer2 = new byte[1024];
-                            int bytesRead2 = 0;
-
-                            while ((bytesRead2 = sevenZFile.read(buffer2, 0, buffer2.length)) != -1) {
-                                outputStream2.write(buffer2, 0, bytesRead2);
-                            }
-                            outputStream2.close();
-
-                            processedEntries++;
-                            int progress = (int) ((processedEntries / (double) totalEntries) * 100);
-                            publish(new UpdateProgress("Extracting...", progress));
-                        }
-                    }
-
-                    sevenZFile.close();
+                    extractArchive(tempFile, tempDir, (message, progress) -> publish(new UpdateProgress(message, progress)));
                     tempFile.delete();
 
                     // INSTALLATION PHASE
@@ -376,6 +347,183 @@ public class MainForm extends javax.swing.JFrame {
 
         // Start the SwingWorker to perform the update process in the background
         worker.execute();
+    }
+
+    // Functional interface for progress reporting
+    @FunctionalInterface
+    private interface ProgressReporter {
+        void report(String message, int progress);
+    }
+
+    // Dynamic archive extraction method
+    private void extractArchive(File archiveFile, File destinationDir, ProgressReporter progressReporter) throws Exception {
+        String fileName = archiveFile.getName().toLowerCase();
+
+        if (fileName.endsWith(".zip")) {
+            extractZip(archiveFile, destinationDir, progressReporter);
+        } else if (fileName.endsWith(".7z")) {
+            extract7z(archiveFile, destinationDir, progressReporter);
+        } else {
+            throw new Exception("Unsupported archive format: " + fileName);
+        }
+    }
+
+    // ZIP extraction method
+    private void extractZip(File zipFile, File destinationDir, ProgressReporter progressReporter) throws Exception {
+        try (FileInputStream fis = new FileInputStream(zipFile);
+             ZipInputStream zipInputStream = new ZipInputStream(fis)) {
+
+            ZipEntry entry;
+            long processedEntries = 0;
+
+            // Count entries for progress
+            long totalEntries = 0;
+            try (ZipInputStream countStream = new ZipInputStream(new FileInputStream(zipFile))) {
+                while (countStream.getNextEntry() != null) totalEntries++;
+            }
+
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    File entryFile = new File(destinationDir, entry.getName());
+                    File entryDir = entryFile.getParentFile();
+                    if (!entryDir.exists()) {
+                        entryDir.mkdirs();
+                    }
+
+                    try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(entryFile))) {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+                }
+
+                processedEntries++;
+                int progress = (int) ((processedEntries / (double) totalEntries) * 100);
+                progressReporter.report("Extracting...", progress);
+            }
+        }
+    }
+
+    // 7z extraction method with fallback
+    private void extract7z(File sevenZFile, File destinationDir, ProgressReporter progressReporter) throws Exception {
+        // Try Apache Commons Compress first
+        try {
+            extract7zWithCommonsCompress(sevenZFile, destinationDir, progressReporter);
+        } catch (Exception e) {
+            // Fall back to native 7z if available
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && errorMsg.contains("Multi input/output stream coders")) {
+                System.out.println("Commons Compress failed with multi-stream coders error, trying native 7z...");
+                extract7zNative(sevenZFile, destinationDir, progressReporter);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    // 7z extraction using Apache Commons Compress
+    private void extract7zWithCommonsCompress(File sevenZFile, File destinationDir, ProgressReporter progressReporter) throws Exception {
+        try (SevenZFile archive = new SevenZFile(sevenZFile)) {
+            SevenZArchiveEntry entry;
+            long processedEntries = 0;
+
+            // Count total entries for progress calculation
+            long totalEntries = 0;
+            while ((entry = archive.getNextEntry()) != null) {
+                if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
+                    totalEntries++;
+                }
+            }
+            archive.close();
+
+            // Reopen for actual extraction
+            try (SevenZFile extractArchive = new SevenZFile(sevenZFile)) {
+                while ((entry = extractArchive.getNextEntry()) != null) {
+                    if (!entry.isDirectory() && !entry.getName().equals("kDummy")) {
+                        String entryName = entry.getName();
+                        File entryFile = new File(destinationDir.getAbsolutePath() + File.separator + entryName);
+                        File entryDir = entryFile.getParentFile();
+                        if (!entryDir.exists()) {
+                            entryDir.mkdirs();
+                        }
+
+                        try (BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(entryFile))) {
+                            byte[] buffer = new byte[8192];
+                            int bytesRead;
+                            while ((bytesRead = extractArchive.read(buffer)) != -1) {
+                                outputStream.write(buffer, 0, bytesRead);
+                            }
+                        }
+
+                        processedEntries++;
+                        int progress = (int) ((processedEntries / (double) totalEntries) * 100);
+                        progressReporter.report("Extracting...", progress);
+                    }
+                }
+            }
+        }
+    }
+
+    // Native 7z extraction as fallback
+    private void extract7zNative(File sevenZFile, File destinationDir, ProgressReporter progressReporter) throws Exception {
+        String sevenZipPath = find7ZipExecutable();
+        if (sevenZipPath == null) {
+            throw new Exception("Cannot extract 7z file: Commons Compress failed and 7-Zip not found on system");
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder(
+                sevenZipPath, "x", sevenZFile.getAbsolutePath(),
+                "-o" + destinationDir.getAbsolutePath(), "-y"
+        );
+        processBuilder.redirectErrorStream(true);
+
+        Process process = processBuilder.start();
+
+        // Read output for any error messages
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println("7z: " + line);
+                progressReporter.report("Extracting...", 50); // Simple progress indication
+            }
+        }
+
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new Exception("Native 7-Zip extraction failed with exit code: " + exitCode);
+        }
+
+        progressReporter.report("Extracting...", 100);
+    }
+
+    // Helper method to find 7z executable
+    private String find7ZipExecutable() {
+        String[] possiblePaths = {
+                "7z",           // If in PATH
+                "7za",          // Alternative name
+                "C:\\Program Files\\7-Zip\\7z.exe",
+                "C:\\Program Files (x86)\\7-Zip\\7z.exe",
+                "/usr/bin/7z",  // Linux
+                "/usr/local/bin/7z",
+                "/opt/homebrew/bin/7z", // macOS with Homebrew
+                "/usr/local/Cellar/p7zip/*/bin/7z" // macOS with Homebrew p7zip
+        };
+
+        for (String path : possiblePaths) {
+            try {
+                ProcessBuilder testBuilder = new ProcessBuilder(path, "--help");
+                Process testProcess = testBuilder.start();
+                int exitCode = testProcess.waitFor();
+                if (exitCode == 0) {
+                    return path;
+                }
+            } catch (Exception e) {
+                // Continue to next path
+            }
+        }
+        return null;
     }
 }
 
